@@ -4665,7 +4665,7 @@
 				)
 			)
 		)
-		(property "Value" "200k"
+		(property "Value" "75k"
 			(at 5.08 2.31 90)
 			(layer "F.SilkS")
 			(uuid "a87b26fb-4777-4bb5-b1dd-193dcf6b9b1c")
@@ -4915,7 +4915,7 @@
 				)
 			)
 		)
-		(property "Value" "500k"
+		(property "Value" "1M"
 			(at -0.762 7.663 90)
 			(layer "F.SilkS")
 			(uuid "53b19c77-5610-4d85-9509-4079bd916a69")

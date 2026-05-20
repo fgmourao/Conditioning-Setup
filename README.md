@@ -217,15 +217,47 @@ AM modulation uses a 32-sample unipolar envelope table. When `modulator_freq = 0
 
 ## DAC signal conditioning
 
-The DAC1 output is 0–3.3 V (unipolar). For audio output:
+The DAC1 output is 0–3.3 V (unipolar, midscale = 1.65 V DC). A signal conditioning chain is required before the amplifier or speaker.
 
-- Place a **10 µF electrolytic capacitor** in series (positive pole toward DAC1) to block DC and pass the AC signal
-- Place a **10 kΩ resistor** between the amplifier input and GND to anchor the input when the DAC is disabled
-- Use a **potentiometer (10–50 kΩ)** between the capacitor and the amplifier input for level control
-- Connect the cable shield to GND on the DUE side only (single-end grounding prevents ground loops)
+### Signal chain
 
-The firmware disables DAC1 between sounds (`dacc_disable_channel`) and pre-charges the coupling capacitor to midscale before each trial onset to prevent transients.
+```
+DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: direct output (external amplifier / measurement)
+                                                  └─ Path B: Rs (12 kΩ) ── Rp (1 kΩ to GND)
+                                                                     │
+                                                                  POT (50 kΩ linear)
+                                                                     │ cursor
+                                                                  TDA8932 IN+
+                                                                     │
+                                                               OUT1 ── tweeter ── OUT2
+```
 
+### Components
+
+| Component | Value | Purpose |
+|---|---|---|
+| C1 electrolytic | 10 µF, + toward DAC1 | Blocks 1.65 V DC offset; passes AC signal |
+| Rs fixed resistor | 12 kΩ | Attenuates DAC signal to prevent amplifier saturation |
+| Rp fixed resistor | 1 kΩ to GND | Anchors amplifier input when DAC is disabled; eliminates idle noise |
+| Potentiometer | 50 kΩ linear | Volume control across full rotation range without clipping |
+| TDA8932 module | Class-D, 12 V, BTL | Gain 30 dB (31.6×); differential output OUT1/OUT2 |
+| Tweeter | 4 Ω, 40 W, 6–20 kHz | Connected differentially between OUT1 and OUT2 — neither terminal to GND |
+
+### ON-OFF-ON switch
+
+A three-position toggle switch after the coupling capacitor selects the signal path:
+
+| Position | Path | Use |
+|---|---|---|
+| ON (left) | Direct output after C1 | External amplifier, oscilloscope, audio interface |
+| OFF (centre) | Mute | No signal at any output |
+| ON (right) | Rs → Rp → POT → TDA8932 → tweeter | Normal experimental operation |
+
+### Amplifier notes
+
+The TDA8932 operates in BTL (Bridge Tied Load) mode. The fixed Rs/Rp divider is required because the DAC1 level (3.3 V peak) would saturate the amplifier (gain 30 dB, 12 V supply) at approximately 10 % of potentiometer rotation without pre-attenuation.
+
+The firmware disables DAC1 between sounds (`dacc_disable_channel`) and pre-charges the coupling capacitor to midscale (2048) before each trial onset to prevent onset and offset transients. Cable shield connects to GND on the DUE side only to prevent ground loops.
 ---
 
 ## Python application
