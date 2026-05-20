@@ -253,10 +253,6 @@ A three-position toggle switch after the coupling capacitor selects the signal p
 | OFF (centre) | Mute | No signal at any output |
 | ON (right) | Rs → Rp → POT → TDA8932 → tweeter | Normal experimental operation |
 
-### Amplifier notes
-
-The TDA8932 operates in BTL (Bridge Tied Load) mode. The fixed Rs/Rp divider is required because the DAC1 level (3.3 V peak) would saturate the amplifier (gain 30 dB, 12 V supply) without pre-attenuation.
-The firmware disables DAC1 between sounds (`dacc_disable_channel`) and pre-charges the coupling capacitor to midscale (2048) before each trial onset to prevent onset and offset transients. Optinal: Cable shield connects to GND on the DUE side only to prevent ground loops.
 ---
 
 ## Python application
