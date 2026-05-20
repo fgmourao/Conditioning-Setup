@@ -241,7 +241,7 @@ DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: d
 | Rp fixed resistor | 1 kΩ to GND | Anchors amplifier input when DAC is disabled; eliminates idle noise |
 | Potentiometer | 50 kΩ linear | Volume control across full rotation range without clipping |
 | TDA8932 module | Class-D, 12 V, BTL | Gain 30 dB (31.6×); differential output OUT1/OUT2 |
-| Tweeter | 4 Ω, 40 W, 6–20 kHz | Connected differentially between OUT1 and OUT2 — neither terminal to GND |
+| Tweeter | 4 Ω, 40 W, 6–20 kHz | Connected differentially between OUT1 and OUT2 |
 
 ### ON-OFF-ON switch
 
