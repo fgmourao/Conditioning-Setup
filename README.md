@@ -6,7 +6,7 @@ Arduino DUE stimulus generator controlled by a Python/PyQt5 application over USB
 
 ---
 
-## Origin
+## Background
 
 This project is a full rewrite of the system described in:
 
