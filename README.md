@@ -225,11 +225,11 @@ The DAC1 output is 0–3.3 V (unipolar, midscale = 1.65 V DC). A signal 
 DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: direct output (external amplifier / measurement)
                                                   └─ Path B: Rs (12 kΩ) ── Rp (1 kΩ to GND)
                                                                      │
-                                                                  POT (50 kΩ linear)
-                                                                     │ cursor
+                                                                  POT METER (50 kΩ linear)
+                                                                     │ 
                                                                   TDA8932 IN+
                                                                      │
-                                                               OUT1 ── tweeter ── OUT2
+                                                                  Tweeter
 ```
 
 ### Components
