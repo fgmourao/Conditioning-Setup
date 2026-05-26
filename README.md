@@ -1,4 +1,4 @@
-# Conditioning Cage v2.0
+# Conditioning Setup v2.0
 ** Under development
 
 Hardware, firmware and desktop interface for classical fear conditioning.  
@@ -188,10 +188,10 @@ Shows experiment state at each transition:
 
 | State | Display |
 |---|---|
-| Startup | `Conditioning Cage / v2.0 Ready` |
+| Startup | `Conditioning Setup / Version 2.0` |
 | Trial onset | `TRIAL X/N` / `CS` · `CS + US` · `US` |
-| Done | `Conditioning Cage / Done` |
-| Aborted | `Conditioning Cage / Aborted` |
+| Done | `Conditioning Setup / Done` |
+| Aborted | `Conditioning Setup / Aborted` |
 
 The firmware runs normally if the display is not connected.
 
@@ -309,7 +309,7 @@ The poll timer (`{"cmd":"status"}` every 1500 ms) is stopped when the experiment
 
 | File | Description |
 |---|---|
-| `cage_app_dark.py` | Main application — dark theme |
+| `conditioning_setup_dark.py` | Main application — dark theme |
 | `Stimuli_PY_DUE.ino` | Arduino DUE firmware |
 | `Waveforms.h` | Adaptive DAC lookup tables |
 | `image.png` | Logo displayed in the application header |

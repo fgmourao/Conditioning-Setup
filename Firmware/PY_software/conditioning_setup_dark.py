@@ -1,13 +1,13 @@
 """
-cage_app.py
+conditioning_setup.py
 ===========
-PROJECT : Conditioning Cage
+PROJECT : Conditioning Setup
 VERSION : 2.0
 AUTHOR  : Flavio Afonso Goncalves Mourao
           mourao.fg@gmail.com
 
 DESCRIPTION:
-    PyQt5 graphical interface for the Conditioning Cage Arduino DUE.
+    PyQt5 graphical interface for the Conditioning Setup Arduino DUE.
     The DUE runs Stimuli_PY_DUE.ino and controls five independent stimuli:
     SOUND (DAC1, AM sine), LIGHT (pin 45, square wave), SHOCK (8 bar pins,
     round-robin), TRIGGER 1 (pin 10, digital pulse), TRIGGER 2 (pin 11,
@@ -26,7 +26,7 @@ SERIAL PROTOCOL (newline-terminated JSON, USB CDC speed):
         {"cmd":"program","n":N,"data":"f0;f1;..."}
             -> {"ok":true,"msg":"N trials programmed"}
                Sends N trials. 'data' is a flat semicolon-separated string of
-               N x 16 float values in row-major order, matching FIELDS exactly.
+               N x 20 float values in row-major order, matching FIELDS exactly.
 
         {"cmd":"start"}
             -> {"ok":true,"msg":"started"}
@@ -92,7 +92,7 @@ AUTHOR:
     Federal University of Minas Gerais (UFMG) - Brazil
 
     Started:     04/2026
-    Last update: 04/2026
+    Last update: 05/2026
     
 """
 
@@ -119,17 +119,24 @@ from PyQt5.QtGui import QTextCursor, QPainter, QColor, QPen, QFont, QPixmap
 # restyle the entire application.
 # =============================================================================
 
-BG        = "#f5f5f5"   # Main window background
-BG_PANEL  = "#ffffff"   # Panel / section frame background
-BG_INPUT  = "#ffffff"   # Input field background
-BORDER    = "#d0d0d0"   # Inactive border colour
-TEXT      = "#1a1a1a"   # Primary text (dark)
-DIM       = "#888888"   # Secondary / label text
-ACC_BLUE  = "#1a5fa8"   # Sound stimulus; RUNNING status; info highlights
-ACC_RED   = "#9b1c1c"   # Shock stimulus; ABORT button; error messages
-ACC_YELL  = "#b35f00"   # LED stimulus; warning messages; CONNECTING state
+BG        = "#0a0a0a"   # Main window background
+BG_PANEL  = "#141414"   # Panel / section frame background
+BG_INPUT  = "#1e1e1e"   # Input field background
+BORDER    = "#2a2a2a"   # Inactive border colour
+TEXT      = "#c8c8c8"   # Primary text (light grey)
+DIM       = "#666666"   # Secondary / label text (medium grey)
+ACC_BLUE  = "#44aaff"   # Sound stimulus; RUNNING status; info highlights
+ACC_RED   = "#ee4444"   # Shock stimulus; ABORT button; error messages
+ACC_YELL  = "#ffaa44"   # LIGHT stimulus; warning messages; CONNECTING state
 ACC_TRG1  = "#aaaaaa"   # Trigger 1 (light grey)
 ACC_TRG2  = "#555555"   # Trigger 2 (dark grey)
+
+# =============================================================================
+# SENTINEL VALUES
+# Used as "infinite duration" flags recognised by the DUE firmware.
+# =============================================================================
+CALIB_DURATION_S = 9999.0  # Calibration runs until ABORT (sound, shock, light)
+LIGHT_DC_HIGH    = 9999.0  # light_freq sentinel: Timer7 not started, pin stays HIGH
 
 # =============================================================================
 # FIELDS
@@ -226,7 +233,7 @@ class SerialThread(QThread):
             self.ser.reset_output_buffer()
 
             # Init window: spend 5 s flushing any pending TX and reading the
-            # DUE boot message ("Conditioning Cage v2.0 ready").
+            # DUE boot message ("Conditioning Setup v2.0 ready").
             init_deadline = time.time() + 5.0
             while time.time() < init_deadline:
                 self._drain_tx()
@@ -693,7 +700,7 @@ class CalibSoundDialog(_CalibBase):
     def _start(self):
         self._send_trial({
             "baseline": 0.0, "silence": 0.0,
-            "onset_sound": 0.0, "sound_duration": 9999.0,
+            "onset_sound": 0.0, "sound_duration": CALIB_DURATION_S,
             "carrier_freq":   self._get(self.e_carrier),
             "modulator_freq": self._get(self.e_mod),
             "volume":         self._get(self.e_volume),
@@ -739,7 +746,7 @@ class CalibLightDialog(_CalibBase):
             "volume": 0.0, "waveform_type": 0.0,
             "onset_shock": 0.0, "shock_duration": 0.0,
             "pulse_high": 0.0, "pulse_low": 0.0,
-            "onset_light": 0.0, "light_duration": 9999.0, "light_freq": 9999.0,
+            "onset_light": 0.0, "light_duration": CALIB_DURATION_S, "light_freq": CALIB_DURATION_S,
             "bar_select": 0.0,
             "onset_trig1": 0.0, "trig1_duration": 0.0,
             "onset_trig2": 0.0, "trig2_duration": 0.0,
@@ -810,7 +817,7 @@ class CalibShockDialog(_CalibBase):
             "onset_sound": 0.0, "sound_duration": 0.0,
             "carrier_freq": 0.0, "modulator_freq": 0.0,
             "volume": 0.0, "waveform_type": 0.0,
-            "onset_shock": 0.0, "shock_duration": 9999.0,
+            "onset_shock": 0.0, "shock_duration": CALIB_DURATION_S,
             "pulse_high": self._get(self.e_pulse_high, 60000.0),
             "pulse_low":  self._get(self.e_pulse_low,  10000.0),
             "onset_light": 0.0, "light_duration": 0.0, "light_freq": 0.0,
@@ -827,8 +834,8 @@ class CalibShockDialog(_CalibBase):
 class CageApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        #self.setWindowTitle("Conditioning Cage v2.0")
-        self.setWindowTitle("Conditioning Cage")
+        #self.setWindowTitle("Conditioning Setup v2.0")
+        self.setWindowTitle("Conditioning Setup")
         self.resize(1300, 850)
         self.setStyleSheet(f"background:{BG}; color:{TEXT};")
 
@@ -1008,7 +1015,7 @@ class CageApp(QMainWindow):
         msg.setWindowTitle("Info")
         msg.setStyleSheet(f"background:{BG_PANEL}; color:{TEXT};")
         msg.setText(
-            "<p><b>Conditioning Cage v2.0</b></p>"
+            "<p><b>Conditioning Setup v2.0</b></p>"
             "<p>Documentation licensed under the<br>"
             "<b>Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)</b></p>"
             "<p><a href='https://github.com/fgmourao' style='color:#44aaff;'>"
@@ -1045,7 +1052,7 @@ class CageApp(QMainWindow):
         lay = QHBoxLayout(hdr)
         lay.setContentsMargins(0, 0, 0, 0)
 
-        title = QLabel("CONDITIONING CAGE")
+        title = QLabel("CONDITIONING SETUP")
         title.setStyleSheet(f"color:{TEXT}; font-size:16px; font-weight:bold; letter-spacing:2px;")
         #ver = QLabel("V2.0")
         #ver.setStyleSheet(f"color:{TEXT}; font-size:16px;")
@@ -1321,7 +1328,7 @@ class CageApp(QMainWindow):
         if self._connected and not self._ready_confirmed:
             QMessageBox.warning(
                 self, "No Response",
-                "No response from Conditioning Cage.\n\nPossible causes:\n"
+                "No response from Conditioning Setup.\n\nPossible causes:\n"
                 "- Wrong port selected\n"
                 "- Firmware not uploaded\n"
                 "- Wrong USB port on the DUE board"
@@ -1587,9 +1594,15 @@ class CageApp(QMainWindow):
             self.serial_thread.send({"cmd": "status"})
 
     def _poll_if_current(self, generation):
-        """Poll only if generation matches -- suppresses orphaned singleShots after ABORT."""
+        """Poll only if generation matches and experiment is not actively running.
+    Suppresses polls during active sound playback to avoid USB/Timer4 glitch:
+    USB transactions during Timer4 ISR execution cause phase discontinuities
+    in the DAC output, audible as clicks approximately 1 second before trial end.
+    The trial counter is updated by spontaneous sendStatus() from the firmware
+    at each trial onset instead."""
         if self._connected and generation == self._poll_generation:
-            self.serial_thread.send({"cmd": "status"})
+            if not self._progress_timer.isActive():
+                self.serial_thread.send({"cmd": "status"})
 
     # -------------------------------------------------------------------------
     # Progress line

@@ -1,6 +1,6 @@
 /* Stimuli_PY_DUE.ino
  *
- * PROJECT : Conditioning Cage
+ * PROJECT : Conditioning Setup
  * Arduino DUE stimulus generator for classical fear conditioning.
  * Version: 2.0
  *
@@ -36,10 +36,10 @@
  * OLED status display (128x32, SSD1306, I2C address 0x3C):
  *   Wired to DUE I2C bus: SDA = pin 20, SCL = pin 21.
  *   Shows experiment state at each transition:
- *     Startup  : "Conditioning Cage / v2.0  Ready."
+ *     Startup  : "Conditioning Setup / Ready."
  *     Trial    : "TRIAL X/N / CS"  or  "CS + US"  or  "US"
- *     Done     : "Conditioning Cage / Done"
- *     Aborted  : "Conditioning Cage / Aborted"
+ *     Done     : "Conditioning Setup / Done"
+ *     Aborted  : "Conditioning Setup / Aborted"
  *   Updated in RunTrial() before ProgramSound() -- no audio glitch risk.
  *   sendStatus() is also called at the same point to notify Python of trial onset.
  *
@@ -432,6 +432,12 @@ void setup()
   Timer4.attachInterrupt(carrier);
   Timer5.attachInterrupt(modulating);
 
+  // Set Timer4 (DAC carrier) to highest interrupt priority so shockClock()
+  // ISR (Timer6) cannot delay carrier() and cause audio phase jitter (glitch).
+  NVIC_SetPriority(TC4_IRQn, 0);  // Timer4 -- highest
+  NVIC_SetPriority(TC5_IRQn, 0);  // Timer5 -- same as Timer4 (modulator)
+  NVIC_SetPriority(TC6_IRQn, 3);  // Timer6 -- lower than DAC timers
+
   // DAC initialisation.
   // analogWrite(DAC0, 0) initialises the DACC hardware interface on the SAM3X8E.
   // analogWrite(DAC1, 0) selects and enables channel 1 (the physical DAC1 pin).
@@ -450,10 +456,10 @@ void setup()
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
   display.setCursor(0, 0);
-  display.print("Conditioning Cage");
+  display.print("Conditioning Setup");
   display.setCursor(0, 14);
   display.setTextSize(1);
-  display.print("V2");
+  display.print("Version 2.0");
   display.display();
 
   // Load default parameters and start shock/light timers.
@@ -478,7 +484,7 @@ void setup()
   }
 
   status = ST_IDLE;
-  SerialUSB.println("{\"ok\":true,\"msg\":\"Conditioning Cage v2.0 ready\"}");
+  SerialUSB.println("{\"ok\":true,\"msg\":\"Conditioning Setup v2.0 ready\"}");
 }
 
 /*############################################################################################################
@@ -508,7 +514,7 @@ void loop()
         display.setTextSize(1);
         display.setTextColor(SSD1306_WHITE);
         display.setCursor(0, 0);
-        display.print("Conditioning Cage");
+        display.print("Conditioning Setup");
         display.setCursor(0, 14);
         display.setTextSize(2);
         display.print("Aborted");
@@ -803,7 +809,7 @@ void RunExperiment()
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print("Conditioning Cage");
+  display.print("Conditioning Setup");
   display.setCursor(0, 14);
   display.setTextSize(2);
   display.print(bAbort ? "Aborted" : "Done");
