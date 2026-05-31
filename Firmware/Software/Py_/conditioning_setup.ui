@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CageApp</class>
+ <widget class="QMainWindow" name="CageApp">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1300</width><height>850</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>Conditioning Cage v2.0</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="main_layout">
+    <property name="contentsMargins"><number>15</number><number>15</number><number>15</number><number>15</number></property>
+    <property name="spacing"><number>15</number></property>
+
+    <!-- HEADER -->
+    <item>
+     <widget class="QFrame" name="hdr">
+      <property name="minimumHeight"><number>40</number></property>
+      <property name="maximumHeight"><number>40</number></property>
+      <layout class="QHBoxLayout" name="hdr_layout">
+       <property name="contentsMargins"><number>0</number><number>0</number><number>0</number><number>0</number></property>
+       <item><widget class="QLabel" name="lbl_title"><property name="text"><string>CONDITIONING CAGE</string></property></widget></item>
+       <item><widget class="QLabel" name="lbl_img"><property name="text"><string/></property></widget></item>
+       <item><spacer><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+       <item><widget class="QLabel" name="lbl_port_label"><property name="text"><string>Port:</string></property></widget></item>
+       <item><widget class="QComboBox" name="cmb_port"><property name="minimumWidth"><number>150</number></property></widget></item>
+       <item><widget class="QPushButton" name="btn_connect"><property name="text"><string>CONNECT</string></property></widget></item>
+       <item><spacer><property name="sizeHint" stdset="0"><size><width>30</width><height>0</height></size></property></spacer></item>
+       <item><widget class="QLabel" name="lbl_trial"><property name="text"><string>TRIAL 0/0</string></property></widget></item>
+       <item><widget class="QLabel" name="lbl_status"><property name="text"><string>IDLE</string></property></widget></item>
+      </layout>
+     </widget>
+    </item>
+
+    <!-- BODY -->
+    <item>
+     <layout class="QHBoxLayout" name="body_layout">
+      <property name="spacing"><number>15</number></property>
+
+      <!-- LEFT PANEL -->
+      <item>
+       <widget class="QWidget" name="left_panel">
+        <property name="minimumWidth"><number>340</number></property>
+        <property name="maximumWidth"><number>340</number></property>
+        <layout class="QVBoxLayout" name="left_layout">
+         <property name="contentsMargins"><number>0</number><number>0</number><number>0</number><number>0</number></property>
+         <property name="spacing"><number>15</number></property>
+
+         <!-- TRIAL CONFIGURATION -->
+         <item>
+          <widget class="QFrame" name="cfg_frame">
+           <layout class="QVBoxLayout" name="cfg_layout">
+            <item><widget class="QLabel" name="lbl_cfg_title"><property name="text"><string>TRIAL CONFIGURATION</string></property></widget></item>
+            <item><widget class="QLabel" name="lbl_baseline"><property name="text"><string>Baseline</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_baseline"><property name="text"><string>0</string></property></widget></item>
+            <item><widget class="QLabel" name="lbl_silence"><property name="text"><string>Inter-Trial Interval</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_silence"><property name="text"><string>0</string></property></widget></item>
+            <item><widget class="QLabel" name="lbl_sound"><property name="text"><string>&#9670; SOUND</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_snd_onset"><property name="text"><string>0</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_snd_dur"><property name="text"><string>10</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_carrier"><property name="text"><string>3000</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_modulator"><property name="text"><string>10</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_volume"><property name="text"><string>100</string></property></widget></item>
+            <item><widget class="QLabel" name="lbl_led"><property name="text"><string>&#9670; LED</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_led_onset"><property name="text"><string>0</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_led_dur"><property name="text"><string>10</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_led_freq"><property name="text"><string>10</string></property></widget></item>
+            <item><widget class="QLabel" name="lbl_shock"><property name="text"><string>&#9670; SHOCK</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_shk_onset"><property name="text"><string>8</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_shk_dur"><property name="text"><string>2</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_pulse_hi"><property name="text"><string>20</string></property></widget></item>
+            <item><widget class="QLineEdit" name="e_pulse_lo"><property name="text"><string>20</string></property></widget></item>
+            <item><widget class="QPushButton" name="btn_add"><property name="text"><string>+ ADD TRIAL</string></property></widget></item>
+           </layout>
+          </widget>
+         </item>
+
+         <!-- CONTROLS -->
+         <item>
+          <widget class="QFrame" name="ctrl_frame">
+           <layout class="QVBoxLayout" name="ctrl_layout">
+            <item><widget class="QLabel" name="lbl_ctrl_title"><property name="text"><string>CONTROLS</string></property></widget></item>
+            <item><widget class="QPushButton" name="btn_send"><property name="text"><string>SEND PARAMETERS</string></property></widget></item>
+            <item>
+             <layout class="QHBoxLayout" name="start_abort_layout">
+              <item><widget class="QPushButton" name="btn_start"><property name="text"><string>START</string></property></widget></item>
+              <item><widget class="QPushButton" name="btn_abort"><property name="text"><string>ABORT</string></property></widget></item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+
+         <item><spacer><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+        </layout>
+       </widget>
+      </item>
+
+      <!-- RIGHT PANEL -->
+      <item>
+       <widget class="QWidget" name="right_panel">
+        <layout class="QVBoxLayout" name="right_layout">
+         <property name="contentsMargins"><number>0</number><number>0</number><number>0</number><number>0</number></property>
+         <property name="spacing"><number>10</number></property>
+
+         <!-- RECORDED TRIALS TABLE -->
+         <item>
+          <widget class="QFrame" name="tbl_frame">
+           <layout class="QVBoxLayout" name="tbl_layout">
+            <item><widget class="QLabel" name="lbl_tbl_title"><property name="text"><string>RECORDED TRIALS</string></property></widget></item>
+            <item>
+             <widget class="QTableWidget" name="tbl">
+              <property name="minimumHeight"><number>240</number></property>
+              <property name="maximumHeight"><number>240</number></property>
+              <column><property name="text"><string>#</string></property></column>
+              <column><property name="text"><string>BASELINE</string></property></column>
+              <column><property name="text"><string>ITI</string></property></column>
+              <column><property name="text"><string>SND ON</string></property></column>
+              <column><property name="text"><string>SND DUR</string></property></column>
+              <column><property name="text"><string>CARRIER</string></property></column>
+              <column><property name="text"><string>MOD</string></property></column>
+              <column><property name="text"><string>VOL</string></property></column>
+              <column><property name="text"><string>SHK ON</string></property></column>
+              <column><property name="text"><string>SHK DUR</string></property></column>
+              <column><property name="text"><string>PLS HI</string></property></column>
+              <column><property name="text"><string>PLS LO</string></property></column>
+              <column><property name="text"><string>LED ON</string></property></column>
+              <column><property name="text"><string>LED DUR</string></property></column>
+              <column><property name="text"><string>LED HZ</string></property></column>
+              <column><property name="text"><string>DEL</string></property></column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+
+         <!-- TIMELINE (custom widget placeholder) -->
+         <item>
+          <widget class="QFrame" name="timing_frame">
+           <layout class="QVBoxLayout" name="timing_layout">
+            <item><widget class="QLabel" name="lbl_timing_title"><property name="text"><string>TRIAL TIMELINE PREVIEW</string></property></widget></item>
+            <item>
+             <widget class="QWidget" name="timing_widget" native="true">
+              <!-- TimingWidget: custom QPainter widget.
+                   Rendered programmatically in cage_app.py (TimingWidget class).
+                   Cannot be previewed in Qt Designer. -->
+              <property name="minimumHeight"><number>140</number></property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+
+         <!-- EVENT LOG -->
+         <item>
+          <widget class="QFrame" name="log_frame">
+           <layout class="QVBoxLayout" name="log_layout">
+            <item><widget class="QLabel" name="lbl_log_title"><property name="text"><string>EVENT LOG</string></property></widget></item>
+            <item><widget class="QTextEdit" name="log"><property name="readOnly"><bool>true</bool></property></widget></item>
+           </layout>
+          </widget>
+         </item>
+
+        </layout>
+       </widget>
+      </item>
+
+     </layout>
+    </item>
+   </layout>
+  </widget>
+
+  <!-- MENU BAR -->
+  <widget class="QMenuBar" name="menubar">
+   <widget class="QMenu" name="menu_protocol">
+    <property name="title"><string>Protocol</string></property>
+    <addaction name="act_save"/>
+    <addaction name="act_load"/>
+    <addaction name="separator"/>
+    <addaction name="act_clear"/>
+   </widget>
+   <widget class="QMenu" name="menu_calibration">
+    <property name="title"><string>Calibration</string></property>
+    <addaction name="act_cal_snd"/>
+    <addaction name="act_cal_led"/>
+    <addaction name="act_cal_shk"/>
+   </widget>
+   <widget class="QMenu" name="menu_help">
+    <property name="title"><string>Help</string></property>
+    <addaction name="act_info"/>
+   </widget>
+   <addaction name="menu_protocol"/>
+   <addaction name="menu_calibration"/>
+   <addaction name="menu_help"/>
+  </widget>
+
+  <!-- ACTIONS -->
+  <action name="act_save"><property name="text"><string>Save Protocol...</string></property><property name="shortcut"><string>Ctrl+S</string></property></action>
+  <action name="act_load"><property name="text"><string>Load Protocol...</string></property><property name="shortcut"><string>Ctrl+O</string></property></action>
+  <action name="act_clear"><property name="text"><string>Clear All Trials</string></property></action>
+  <action name="act_cal_snd"><property name="text"><string>Calibration Sound</string></property></action>
+  <action name="act_cal_led"><property name="text"><string>Calibration LED</string></property></action>
+  <action name="act_cal_shk"><property name="text"><string>Calibration Shock</string></property></action>
+  <action name="act_info"><property name="text"><string>Info</string></property></action>
+
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

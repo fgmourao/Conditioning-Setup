@@ -1,7 +1,7 @@
 # Conditioning Setup v2.0
 ** Under development
 
-Hardware, firmware and desktop interface for classical fear conditioning.  
+Hardware, firmware and desktop interface for classical fear conditioning.
 Arduino DUE stimulus generator controlled by a Python/PyQt5 application over USB.
 
 ---
@@ -10,9 +10,9 @@ Arduino DUE stimulus generator controlled by a Python/PyQt5 application over USB
 
 This project is a full rewrite of the system described in:
 
-> Amaral Junior PA, Mourao FAG, Moraes MFD (2019).  
-> *A Custom Microcontrolled and Wireless-Operated Chamber for Auditory Fear Conditioning.*  
-> Frontiers in Neuroscience.  
+> Amaral Junior PA, Mourao FAG, Moraes MFD (2019).
+> *A Custom Microcontrolled and Wireless-Operated Chamber for Auditory Fear Conditioning.*
+> Frontiers in Neuroscience.
 > https://doi.org/10.3389/fnins.2019.01193
 
 The original v1.0 architecture used an ESP8266 as a Wi-Fi master communicating with the Arduino DUE via SPI, with a browser-based HTML interface. Version 2.0 removes the ESP8266 entirely — a PyQt5 desktop application communicates directly with the DUE over its native USB port.
@@ -169,7 +169,7 @@ Status codes: `0` IDLE · `1` READY · `2` RUNNING · `3` DONE · `4` FAULT · `
 
 ## Sync outputs
 
-All sync pins are active HIGH while the corresponding stimulus is active.  
+All sync pins are active HIGH while the corresponding stimulus is active.
 **Use these pins as the authoritative timing reference for external equipment** (electrophysiology, cameras). The `onset_*` fields in seconds carry a worst-case jitter of ~500 µs (one loop iteration); the sync pins do not.
 
 | Pin | Signal | Description |
@@ -183,7 +183,7 @@ All sync pins are active HIGH while the corresponding stimulus is active.
 
 ## OLED status display
 
-Optional SSD1306 128×32 OLED on I²C (SDA = pin 20, SCL = pin 21, address 0x3C).  
+Optional SSD1306 128×32 OLED on I²C (SDA = pin 20, SCL = pin 21, address 0x3C).
 Shows experiment state at each transition:
 
 | State | Display |
@@ -208,7 +208,7 @@ v2.0 uses adaptive lookup tables (`Waveforms.h`) to minimise harmonic distortion
 | > 1 000 Hz | 16 samples | up to 48 kHz |
 | ≤ 1 000 Hz | 32 samples | up to 32 kHz |
 
-All rates are within the SAM3X8E DAC hardware limit of 1 MHz.  
+All rates are within the SAM3X8E DAC hardware limit of 1 MHz.
 Buffer RAM cost: 32 × 32 × 2 bytes = 2 KB.
 
 AM modulation uses a 32-sample unipolar envelope table. When `modulator_freq = 0` the carrier is output as a pure sine with no modulation.
@@ -217,15 +217,15 @@ AM modulation uses a 32-sample unipolar envelope table. When `modulator_freq = 0
 
 ## DAC signal conditioning
 
-The DAC1 output is 0–3.3 V (unipolar, midscale = 1.65 V DC). A signal conditioning chain is required before the amplifier or speaker.
+The DAC1 output is 0–3.3 V (unipolar, midscale = 1.65 V DC). A signal conditioning chain is required before the amplifier or speaker.
 
 ### Signal chain
 
 ```
-DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: direct output (external amplifier / measurement)
-                                                  └─ Path B: Rs (12 kΩ) ── Rp (1 kΩ to GND)
+DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: direct output (external amplifier / measurement)
+                                                  └─ Path B: Rs (12 kΩ) ── Rp (1 kΩ to GND)
                                                                      │
-                                                                  POT (50 kΩ linear)
+                                                                  POT (50 kΩ linear)
                                                                      │ cursor
                                                                   TDA8932 IN+
                                                                      │
@@ -236,12 +236,12 @@ DAC1 ── 10 µF (AC coupling) ── [ON-OFF-ON switch] ─┬─ Path A: d
 
 | Component | Value | Purpose |
 |---|---|---|
-| C1 electrolytic | 10 µF, + toward DAC1 | Blocks 1.65 V DC offset; passes AC signal |
-| Rs fixed resistor | 12 kΩ | Attenuates DAC signal to prevent amplifier saturation |
-| Rp fixed resistor | 1 kΩ to GND | Anchors amplifier input when DAC is disabled; eliminates idle noise |
-| Potentiometer | 50 kΩ linear | Volume control across full rotation range without clipping |
-| TDA8932 module | Class-D, 12 V, BTL | Gain 30 dB (31.6×); differential output OUT1/OUT2 |
-| Tweeter | 4 Ω, 40 W, 6–20 kHz | Connected differentially between OUT1 and OUT2 |
+| C1 electrolytic | 10 µF, + toward DAC1 | Blocks 1.65 V DC offset; passes AC signal |
+| Rs fixed resistor | 12 kΩ | Attenuates DAC signal to prevent amplifier saturation |
+| Rp fixed resistor | 1 kΩ to GND | Anchors amplifier input when DAC is disabled; eliminates idle noise |
+| Potentiometer | 50 kΩ linear | Volume control across full rotation range without clipping |
+| TDA8932 module | Class-D, 12 V, BTL | Gain 30 dB (31.6×); differential output OUT1/OUT2 |
+| Tweeter | 4 Ω, 40 W, 6–20 kHz | Connected differentially between OUT1 and OUT2 |
 
 ### ON-OFF-ON switch
 
@@ -321,6 +321,71 @@ Arduino library dependencies (install via Arduino IDE Library Manager):
 
 ---
 
+## Desktop Executables
+
+Pre-built executables are available for macOS and Windows. No Python installation is required — all dependencies are bundled inside the application package.
+
+### macOS
+
+**File:** `Conditioning Setup.app`
+
+**Compatibility:** macOS 10.15 (Catalina) or later. Built on Apple Silicon (M-series); runs natively on Apple Silicon Macs and via Rosetta 2 on Intel Macs.
+
+**Installation:**
+1. Download `Conditioning Setup.app`
+2. Move it to your Applications folder or any preferred location
+3. On first launch, macOS Gatekeeper may block the app because it is not signed by an Apple-registered developer. To allow it, open Terminal and run:
+
+```bash
+xattr -cr "/Applications/Conditioning Setup.app"
+```
+
+Then double-click the app to open normally.
+
+**Build environment:**
+- macOS 15.7.5 (Sequoia), Apple Silicon (M2)
+- Python 3.12.2
+- PyInstaller 6.x
+- PyQt5 5.15.x, pyserial 3.x
+
+**Build command:**
+```bash
+pyinstaller --windowed \
+    --name "Conditioning Setup" \
+    --icon "icon.icns" \
+    --add-data "image.png:." \
+    --add-data "icon.ico:." \
+    conditioning_setup_dark.py
+```
+
+---
+
+### Windows
+
+**File:** `Conditioning Setup.exe`
+
+**Compatibility:** Windows 10 and Windows 11 (64-bit). Built on Windows 11; compatible with Windows 10 version 1903 or later.
+
+**Installation:**
+1. Download `Conditioning Setup.exe`
+2. Place it in any folder
+3. On first launch, Windows SmartScreen may display a warning ("Windows protected your PC"). Click **More info** → **Run anyway**. This warning appears because the executable is not digitally signed.
+
+**USB driver:** the Arduino DUE native port uses a standard USB CDC driver. Windows 10 and 11 include this driver natively — no additional installation is required in most cases. If the COM port is not recognised, install the SAM-BA driver from the Arduino IDE or from the Microchip website.
+
+**Build environment:**
+- Windows 11, 64-bit
+- Python 3.14.5
+- PyInstaller 6.20.0
+- PyQt5 5.15.x, pyserial 3.x
+
+**Build command:**
+```
+py -m PyInstaller --onefile --windowed --name "Conditioning Setup" --icon "icon.ico" --add-data "image.png;." --add-data "icon.ico;." conditioning_setup_dark.py
+```
+
+---
+
 ## Known limitations
 
 - Noise waveforms (white, pink) are not implemented. The lookup-table architecture is periodic; a possible approach is to generate noise buffers in Python (NumPy/SciPy) and send them as custom tables over serial.
@@ -336,13 +401,13 @@ Documentation licensed under Creative Commons Attribution-NonCommercial 4.0 Inte
 
 ## Authors
 
-**v1.0 (2019)**  
-Paulo Aparecido Amaral Junior, Flavio Afonso Goncalves Mourao, Marcio Flavio Dutra Moraes  
+**v1.0 (2019)**
+Paulo Aparecido Amaral Junior, Flavio Afonso Goncalves Mourao, Marcio Flavio Dutra Moraes
 *Núcleo de Neurociências, Federal University of Minas Gerais, Brazil*
 
-**v2.0 (2026)**  
-Flavio Afonso Goncalves Mourao — [mourao.fg@gmail.com](mailto:mourao.fg@gmail.com)  
-*CNPq/MCTI/FNDCT Nº 21/2024 — Processo 446467/2024-3*  
+**v2.0 (2026)**
+Flavio Afonso Goncalves Mourao — [mourao.fg@gmail.com](mailto:mourao.fg@gmail.com)
+*CNPq/MCTI/FNDCT Nº 21/2024 — Processo 446467/2024-3*
 *Federal University of Minas Gerais, Brazil*
 
 ---
