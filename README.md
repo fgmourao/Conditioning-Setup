@@ -354,7 +354,6 @@ pyinstaller --windowed \
     --name "Conditioning Setup" \
     --icon "icon.icns" \
     --add-data "image.png:." \
-    --add-data "icon.ico:." \
     conditioning_setup_dark.py
 ```
 
