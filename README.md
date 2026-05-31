@@ -1,7 +1,6 @@
 <p align="left">
-  <img src="https://raw.githubusercontent.com/fgmourao/Conditioning-Setup/Images/image.png" alt="Alt Text" width="80" />
+  <img src="https://raw.githubusercontent.com/fgmourao/Conditioning-Setup/main/Images/image.png" width="80" />
 </p>
-
 
 # Conditioning Setup v2.0
 ** Under development
