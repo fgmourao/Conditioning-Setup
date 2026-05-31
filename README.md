@@ -1,3 +1,8 @@
+<p align="left">
+  <img src="image.png" width="80" />
+</p>
+
+
 # Conditioning Setup v2.0
 ** Under development
 
