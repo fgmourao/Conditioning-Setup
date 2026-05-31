@@ -1,5 +1,5 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/fgmourao/Conditioning-Setup/main/image.png" width="80" />
+<p align="left">
+  <img src="https://raw.githubusercontent.com/fgmourao/Conditioning-Setup/main/image.png" alt="Alt Text" width="80" />
 </p>
 
 
