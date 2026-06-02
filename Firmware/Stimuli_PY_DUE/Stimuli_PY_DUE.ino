@@ -28,7 +28,7 @@
  *                   available via manual protocol edit and may be re-enabled in a future UI release. 
  * Five independent stimuli with individual onset/offset timing:
  *   SOUND    -- DAC1, AM sine or pure sine or square wave, Timer4/Timer5
- *   SHOCK    -- 8 bar pins round-robin, Timer6 at 10 kHz clock
+ *   SHOCK    -- 8 bar pins random sequence (Fisher-Yates shuffle), Timer6 at 10 kHz clock
  *   LIGHT    -- pin 45, square wave 50% duty cycle, Timer7
  *   TRIGGER1 -- pin 10, digital HIGH pulse, duration in ms
  *   TRIGGER2 -- pin 11, digital HIGH pulse, duration in ms
@@ -78,7 +78,7 @@
  *   21   -- I2C SCL (OLED display)
  *   10   -- Trigger 1 output (HIGH during trig1_duration ms after onset_trig1)
  *   11   -- Trigger 2 output (HIGH during trig2_duration ms after onset_trig2)
- *   23,25,27,29,31,33,35,37 -- shock bar outputs (active HIGH, round-robin)
+ *   23,25,27,29,31,33,35,37 -- shock bar outputs (active HIGH, random sequence per trial)
  *
  * Timer allocation:
  *   Timer4 -- carrier()    ISR: writes DACbuffer samples to DAC1
@@ -86,13 +86,18 @@
  *   Timer6 -- shockClock() ISR: 10 kHz shock bar timing clock
  *   Timer7 -- lightClock() ISR: light square wave toggle
  *
- * Based on Version 1.0 (2019): ESP8266 WiFi master + Arduino DUE SPI slave architecture.
+ * Version 1.0 (2019): ESP8266 WiFi master + Arduino DUE SPI slave architecture.
  *   Authors: Paulo Aparecido Amaral Junior, Flavio Afonso Goncalves Mourao, Marcio Flavio Dutra Moraes
  *            Nucleo de Neurociencias UFMG/Brazil
  *            https://doi.org/10.3389/fnins.2019.01193
  *
  * Version 2.0 (2026)
- * Author:  Flavio Afonso Goncalves Mourao  mourao.fg@gmail.com
+ *   Author:  Flavio Afonso Goncalves Mourao  mourao.fg@gmail.com
+              Federal University of Minas Gerais (UFMG) - Brazil
+
+    Started:     12/2023
+    Last update: 06/2026
+
  */
 
 #include "DueTimer.h"
@@ -179,6 +184,12 @@ static const int pinTRIG2      = 11;
 static const int iInitialBar   = 23;
 static const int nBars         = 8;
 static const int barStep       = 2;
+
+// Shock bar pin array and random order buffer.
+static int barPins[nBars]      = {23,25,27,29,31,33,35,37};
+static int barOrder[nBars];
+static int barOrderIdx         = 0;
+
 /*############################################################################################################
         Trial structure
         Each field is stored as float for uniform SerialUSBisation.
@@ -327,6 +338,7 @@ static int   slen = 0;   // Current number of bytes accumulated in sbuf
 
 void AllBarsLow();
 void bars(bool bStatus);
+void shuffleBars();
 void waitMs(uint32_t ms);
 void RunExperiment();
 void RunTrial(int t);
@@ -396,6 +408,11 @@ void waitMs(uint32_t ms)
 
 void setup()
 {
+
+  // Seed random number generator from floating analog pin.
+  // Different value each boot -- ensures bar sequence varies between sessions.
+  randomSeed(analogRead(A0));
+
   // Programming port opens at 115200 baud.
   // The DTR signal from pySerialUSB triggers a hardware reset of the SAM3X8E.
   // The bootloader runs for ~8 seconds;
@@ -591,6 +608,26 @@ void lightClock()
 }
 
 /*############################################################################################################
+        shuffleBars
+        Fisher-Yates shuffle of barOrder[].
+        Called at shock onset (RunTrial) to randomise the bar activation sequence.
+        When all 8 bars have been used, a new shuffle is generated automatically.
+        barSelect > 0 (calibration mode) bypasses this entirely.
+############################################################################################################*/
+void shuffleBars()
+{
+    for (int i = 0; i < nBars; i++) barOrder[i] = barPins[i];
+    for (int i = nBars - 1; i > 0; i--)
+    {
+        int j = random(0, i + 1);
+        int tmp = barOrder[i];
+        barOrder[i] = barOrder[j];
+        barOrder[j] = tmp;
+    }
+    barOrderIdx = 0;
+}
+
+/*############################################################################################################
         bars
         Shock bar state machine.
         Called from the main loop (and waitMs) whenever
@@ -601,39 +638,39 @@ void lightClock()
           bBarStatus == false (bar currently LOW):
             If iCountShock < iPulseHigh: drive pin HIGH (start pulse).
           If iCountShock >= iPulseHigh + iPulseLow: reset counter, advance to next bar.
-
-        The round-robin advances through pins 23,25,27,29,31,33,35,37 in sequence.
+        The random sequence advances through barOrder[] -- shuffled at each shock onset.
         If barSelect > 0 (set at shock onset from tr.bar_select), the bar does not
         advance -- the same pin stays active for the entire shock duration.
 ############################################################################################################*/
-
 void bars(bool bSt)
 {
-  if (bSt)
+if (bSt)
   {
-    if (iCountShock >= iPulseHigh)
+if (iCountShock >= iPulseHigh)
     {
-      PIO_SetOutput(g_APinDescription[iBarPin].pPort,
-                    g_APinDescription[iBarPin].ulPin, LOW, 0, PIO_DEFAULT);
+PIO_SetOutput(g_APinDescription[iBarPin].pPort,
+g_APinDescription[iBarPin].ulPin, LOW, 0, PIO_DEFAULT);
       bBarStatus = false;
     }
   }
-  else
+else
   {
-    if (iCountShock < iPulseHigh)
+if (iCountShock < iPulseHigh)
     {
-      PIO_SetOutput(g_APinDescription[iBarPin].pPort,
-                    g_APinDescription[iBarPin].ulPin, HIGH, 0, PIO_DEFAULT);
+PIO_SetOutput(g_APinDescription[iBarPin].pPort,
+g_APinDescription[iBarPin].ulPin, HIGH, 0, PIO_DEFAULT);
       bBarStatus = true;
     }
-    if (iCountShock >= (iPulseHigh + iPulseLow))
+if (iCountShock >= (iPulseHigh + iPulseLow))
     {
       iCountShock = 0;
-      if (barSelect == 0)
+if (barSelect == 0)
       {
-        // Round-robin: advance to next bar.
-        iBarPin += barStep;
-        if (iBarPin >= (iInitialBar + nBars * barStep)) iBarPin = iInitialBar;
+        // Random sequence: advance to next bar in shuffled order.
+        // When all 8 bars used, reshuffle automatically.
+        barOrderIdx++;
+        if (barOrderIdx >= nBars) { shuffleBars(); }
+        iBarPin = barOrder[barOrderIdx];
       }
       // barSelect > 0: fixed bar -- iBarPin stays unchanged.
     }
@@ -949,9 +986,15 @@ void RunTrial(int t)
       //             1-8 = fixed single bar; stays on that bar for the entire shock duration.
       int bSel     = (int)tr.bar_select;
       barSelect    = (bSel >= 1 && bSel <= nBars) ? bSel : 0;
-      iBarPin      = (barSelect > 0)
-                     ? iInitialBar + (barSelect - 1) * barStep
-                     : iInitialBar;
+      if (barSelect > 0)
+      {
+          iBarPin = iInitialBar + (barSelect - 1) * barStep;
+      }
+      else
+      {
+          shuffleBars();
+          iBarPin = barOrder[barOrderIdx];
+}
       iCountShock  = 0;
       bShockTick   = false;
       bBarStatus   = false;

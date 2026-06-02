@@ -9,10 +9,13 @@ AUTHOR  : Flavio Afonso Goncalves Mourao
 DESCRIPTION:
     PyQt5 graphical interface for the Conditioning Setup Arduino DUE.
     The DUE runs Stimuli_PY_DUE.ino and controls five independent stimuli:
-    SOUND (DAC1, AM sine), LIGHT (pin 45, square wave), SHOCK (8 bar pins,
-    round-robin), TRIGGER 1 (pin 10, digital pulse), TRIGGER 2 (pin 11,
-    digital pulse). This application programs trial parameters, triggers
-    execution, and monitors status in real time.
+    - SOUND (DAC1, AM sine), LIGHT (pin 45, square wave), 
+    - LIGHT (pin 45, square wave 50% duty cycle),
+    - SHOCK (8 bar pins,random sequence per trial), 
+    - TRIGGER 1 (pin 10, digital pulse), 
+    - TRIGGER 2 (pin 11, digital pulse). 
+    
+    This application programs trial parameters, triggers execution, and monitors status in real time.
 
 SERIAL PROTOCOL (newline-terminated JSON, USB CDC speed):
     All commands are sent as compact JSON objects followed by newline.
@@ -71,7 +74,7 @@ TRIAL DATA FORMAT (20 fields per trial, matching DUE struct Trial):
     onset_light    -- light onset within trial (s)
     light_duration -- light duration (s); 0 = no light
     light_freq     -- light square wave frequency (Hz); 9999 = DC HIGH (constant ON)
-    bar_select     -- shock bar: 0 = round-robin (default), 1-8 = fixed single bar
+    bar_select     -- shock bar: 0 = random sequence per trial, 1-8 = fixed single bar
     onset_trig1    -- Trigger 1 onset within trial (s)
     trig1_duration -- Trigger 1 pulse duration (ms); 0 = disabled
     onset_trig2    -- Trigger 2 onset within trial (s)
@@ -81,7 +84,7 @@ REQUIREMENTS:
     pip install pyserial PyQt5
 
 USAGE:
-    python cage_app.py
+    python conditioning_setup_dark.py
     Compatible with Spyder IDE (uses QApplication.instance() to avoid
     duplicate QApplication errors on re-run).
     
@@ -91,8 +94,8 @@ AUTHOR:
     Flavio Mourao  (mourao.fg@gmail.com)
     Federal University of Minas Gerais (UFMG) - Brazil
 
-    Started:     04/2026
-    Last update: 05/2026
+    Started:     12/2023
+    Last update: 06/2026
     
 """
 
@@ -177,7 +180,7 @@ FIELDS = [
     "onset_light",    # LIGHT onset within trial (s)
     "light_duration", # LIGHT duration (s)
     "light_freq",     # LIGHT frequency (Hz); 9999 = DC HIGH (constant ON)
-    "bar_select",     # Shock bar selection: 0 = round-robin (default), 1-8 = fixed bar
+    "bar_select",     # Shock bar selection: 0 = random sequence per trial, 1-8 = fixed single bar
     "onset_trig1",    # Trigger 1 onset within trial (s)
     "trig1_duration", # Trigger 1 pulse duration (ms); 0 = disabled
     "onset_trig2",    # Trigger 2 onset within trial (s)
@@ -778,9 +781,9 @@ class CalibLightDialog(_CalibBase):
 class CalibShockDialog(_CalibBase):
     """
     Shock bar calibration.
-    Allows selection of a specific bar (1-8) or round-robin (all bars).
-    bar_select = 0  -> round-robin through all 8 bars (default behaviour).
-    bar_select = 1-8 -> fixed single bar; stays active for entire shock_duration.
+    Allows selection of a specific bar (1-8) or random sequence (all bars).
+    bar_select = All (0)  -> random sequence per trial (default behaviour).
+    bar_select = 1-8      -> fixed single bar; stays active for entire shock_duration.
     pulse_high and pulse_low are user-configurable (ms).
     shock_duration = 9999 s runs until ABORT.
     """
@@ -1215,7 +1218,7 @@ class CageApp(QMainWindow):
         # Shock
         cfg_lay.addWidget(QLabel(f"<span style='color:{ACC_RED}; font-size:13px; font-weight:bold;'>SHOCK</span>"))
         r, self.e_shk_onset = make_input_row("Onset",      8,  "s");  r.setToolTip("Time from trial start to shock onset (seconds)."); cfg_lay.addWidget(r)
-        r, self.e_shk_dur   = make_input_row("Duration",   2,  "s");  r.setToolTip("Total shock duration (seconds). Bars cycle in round-robin for this period."); cfg_lay.addWidget(r)
+        r, self.e_shk_dur   = make_input_row("Duration",   2,  "s");  r.setToolTip("Total shock duration (seconds). Bars cycle in random sequence for this period."); cfg_lay.addWidget(r)
         r, self.e_pulse_hi  = make_input_row("Pulse HIGH", 20, "ms"); r.setToolTip("Duration each shock bar stays ON per pulse (ms).\nResolution: 0.1 ms. Default: 20 ms."); cfg_lay.addWidget(r)
         r, self.e_pulse_lo  = make_input_row("Pulse LOW",  20, "ms"); r.setToolTip("Inter-pulse interval between consecutive shock pulses (ms).\nResolution: 0.1 ms. Default: 20 ms."); cfg_lay.addWidget(r)
         cfg_lay.addSpacing(10)
@@ -1561,7 +1564,7 @@ class CageApp(QMainWindow):
             "onset_light":      self._get_float(self.e_light_onset),
             "light_duration":   self._get_float(self.e_light_dur),
             "light_freq":       self._get_float(self.e_light_freq),
-            "bar_select":       0.0,  # Always round-robin for experiment trials
+            "bar_select":       0.0,  # Always random sequence for experiment trials
             "onset_trig1":      self._get_float(self.e_trig1_onset),
             "trig1_duration":   self._get_float(self.e_trig1_dur),
             "onset_trig2":      self._get_float(self.e_trig2_onset),

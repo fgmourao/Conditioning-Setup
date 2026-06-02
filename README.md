@@ -74,7 +74,7 @@ Arduino DUE
       ├─ Timer4/5     →  DAC clock / AM modulator ISR
       ├─ Timer6       →  Shock clock (10 kHz)
       ├─ Timer7       →  Light square wave
-      ├─ Pins 23–37   →  Shock bars (8 outputs, round-robin)
+      ├─ Pins 23–37   →  Shock bars (8 outputs, random sequence per trial)
       ├─ Pin 45       →  Light output
       ├─ Pin 46       →  Watchdog fault output
       ├─ Pin 48       →  Hardware ABORT input
@@ -105,7 +105,7 @@ Five independent stimuli with individual onset and duration per trial:
 
 ### Shock
 - Outputs: pins 23, 25, 27, 29, 31, 33, 35, 37 (8 bars)
-- Round-robin activation or fixed single bar (calibration)
+- Random sequence (Fisher-Yates shuffle) activation or fixed single bar (calibration)
 - Pulse HIGH and LOW times configurable in ms (0.1 ms resolution at 10 kHz clock)
 
 ### Trigger 1 / Trigger 2
@@ -137,7 +137,7 @@ Each trial stores 20 float parameters, transmitted semicolon-separated over seri
 | `onset_light` | Light onset within trial | s |
 | `light_duration` | Light duration; 0 = no light | s |
 | `light_freq` | Light frequency; 9999 = DC HIGH | Hz |
-| `bar_select` | 0 = round-robin, 1–8 = fixed bar | — |
+| `bar_select` | 0 = Random sequence per trial, 1–8 = fixed bar | — |
 | `onset_trig1` | Trigger 1 onset within trial; 0 = start of trial | s |
 | `trig1_duration` | Trigger 1 pulse duration; 0 = disabled | ms |
 | `onset_trig2` | Trigger 2 onset within trial; 0 = start of trial | s |
