@@ -137,7 +137,7 @@ Each trial stores 20 float parameters, transmitted semicolon-separated over seri
 | `onset_light` | Light onset within trial | s |
 | `light_duration` | Light duration; 0 = no light | s |
 | `light_freq` | Light frequency; 9999 = DC HIGH | Hz |
-| `bar_select` | 0 = Random sequence per trial, 1–8 = fixed bar | — |
+| `bar_select` | 0 = Random sequence per trial, 1–8 = fixed bar, , 9 = sequential 1→8 (calibration "All") | — |
 | `onset_trig1` | Trigger 1 onset within trial; 0 = start of trial | s |
 | `trig1_duration` | Trigger 1 pulse duration; 0 = disabled | ms |
 | `onset_trig2` | Trigger 2 onset within trial; 0 = start of trial | s |
@@ -333,7 +333,7 @@ Pre-built executables are available for macOS and Windows. No Python installatio
 
 **File:** `Conditioning Setup.app`
 
-**Compatibility:** macOS 10.15 (Catalina) or later. Built on Apple Silicon (M-series); runs natively on Apple Silicon Macs and via Rosetta 2 on Intel Macs.
+**Compatibility:** Built on Apple Silicon (M-series); runs natively on Apple Silicon Macs only.
 
 **Installation:**
 1. Download `Conditioning Setup.app`
@@ -415,4 +415,4 @@ Flavio Afonso Goncalves Mourao — [mourao.fg@gmail.com](mailto:mourao.fg@gmail.
 
 ---
 
-*Last update: May 2026*
+*Last update: June 2026*

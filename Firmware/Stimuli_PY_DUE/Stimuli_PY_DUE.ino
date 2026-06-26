@@ -212,7 +212,7 @@ struct Trial {
   float onset_light;     // Light onset time within trial (s)
   float light_duration;  // Light duration (s); 0 = no light
   float light_freq;      // Light square wave frequency (Hz); 9999 = DC HIGH (constant ON)
-  float bar_select;      // Shock bar selection: 0 = round-robin (default), 1-8 = fixed bar
+  float bar_select;      // Shock bar selection: 0 = random sequence (experiment); 1-8 = fixed bar; 9 (sentinel) = sequential 1->8 (calibration "All")
   float onset_trig1;     // Trigger 1 onset time within trial (s)
   float trig1_duration;  // Trigger 1 pulse duration (ms); 0 = disabled
   float onset_trig2;     // Trigger 2 onset time within trial (s)
@@ -264,7 +264,7 @@ float            pulse_low          = 20.0f;  // Bar OFF time (ms), from trial
 int              iPulseHigh         = 0;       // pulse_high converted to Timer6 ticks
 int              iPulseLow          = 0;       // pulse_low converted to Timer6 ticks
 int              iBarPin            = iInitialBar; // Currently active bar pin
-int              barSelect          = 0;           // 0 = round-robin; 1-8 = fixed bar (set at shock onset)
+int              barSelect          = 0;           // 0 = random (experiment); 1-8 = fixed bar; 9 = sequential 1->8 (calibration "All") -- set at shock onset
 
 // iCountShock: tick counter incremented by shockClock() ISR at 10 kHz.
 // bShockTick:  set by ISR each tick, consumed by bars() in the main loop.
@@ -492,7 +492,7 @@ void setup()
     def.pulse_high     =   20.0f;
     def.pulse_low      =   20.0f;
     def.light_freq     =   10.0f;
-    def.bar_select     =    0.0f; // Round-robin (default)
+    def.bar_select     =    0.0f; //  Random sequence (default)
     ProgramSound(def);
     ProgramShock(def);
     Timer6.attachInterrupt(shockClock);
@@ -665,14 +665,20 @@ if (iCountShock >= (iPulseHigh + iPulseLow))
     {
       iCountShock = 0;
 if (barSelect == 0)
-      {
-        // Random sequence: advance to next bar in shuffled order.
-        // When all 8 bars used, reshuffle automatically.
-        barOrderIdx++;
-        if (barOrderIdx >= nBars) { shuffleBars(); }
-        iBarPin = barOrder[barOrderIdx];
-      }
-      // barSelect > 0: fixed bar -- iBarPin stays unchanged.
+{
+    // Random sequence: advance to next bar in shuffled order.
+    // When all 8 bars used, reshuffle automatically.
+    barOrderIdx++;
+    if (barOrderIdx >= nBars) { shuffleBars(); }
+    iBarPin = barOrder[barOrderIdx];
+}
+else if (barSelect == 9)
+{
+    // Sequential 1->8 (calibration "All")
+    iBarPin += barStep;
+    if (iBarPin >= (iInitialBar + nBars * barStep)) iBarPin = iInitialBar;
+}
+// barSelect 1-8: fixed bar -- iBarPin stays unchanged.
     }
   }
 }
@@ -984,16 +990,22 @@ void RunTrial(int t)
       shockOn      = true;
       // bar_select: 0 = round-robin starting at bar 1 (iInitialBar).
       //             1-8 = fixed single bar; stays on that bar for the entire shock duration.
-      int bSel     = (int)tr.bar_select;
-      barSelect    = (bSel >= 1 && bSel <= nBars) ? bSel : 0;
-      if (barSelect > 0)
-      {
-          iBarPin = iInitialBar + (barSelect - 1) * barStep;
-      }
-      else
-      {
-          shuffleBars();
-          iBarPin = barOrder[barOrderIdx];
+    int bSel = (int)tr.bar_select;
+    if (bSel >= 1 && bSel <= nBars)
+    {
+        barSelect = bSel;                              // Fixed bar (calibration)
+        iBarPin   = iInitialBar + (barSelect - 1) * barStep;
+    }
+    else if (bSel == 9)
+    {
+        barSelect = 9;                                 // Sentinel value. Sequential 1->8 (calibration "All")
+        iBarPin   = iInitialBar;
+    }
+    else
+    {
+        barSelect = 0;                                 // Random sequence (experiment)
+        shuffleBars();
+        iBarPin = barOrder[barOrderIdx];
 }
       iCountShock  = 0;
       bShockTick   = false;
@@ -1327,7 +1339,7 @@ void handleSerialUSB()
           trials[t].onset_light    = f[12];
           trials[t].light_duration = f[13];
           trials[t].light_freq     = f[14];
-          trials[t].bar_select     = f[15]; // 0 = round-robin; 1-8 = fixed bar
+          trials[t].bar_select     = f[15]; // 0 = random (experiment); 1-8 = fixed bar; 9 = sequential 1->8 (calibration "All")
           trials[t].onset_trig1    = f[16];
           trials[t].trig1_duration = f[17];
           trials[t].onset_trig2    = f[18];

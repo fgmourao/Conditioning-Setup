@@ -3,13 +3,11 @@ conditioning_setup.py
 ===========
 PROJECT : Conditioning Setup
 VERSION : 2.0
-AUTHOR  : Flavio Afonso Goncalves Mourao
-          mourao.fg@gmail.com
 
 DESCRIPTION:
     PyQt5 graphical interface for the Conditioning Setup Arduino DUE.
     The DUE runs Stimuli_PY_DUE.ino and controls five independent stimuli:
-    - SOUND (DAC1, AM sine), LIGHT (pin 45, square wave), 
+    - SOUND (DAC1, AM sine), 
     - LIGHT (pin 45, square wave 50% duty cycle),
     - SHOCK (8 bar pins,random sequence per trial), 
     - TRIGGER 1 (pin 10, digital pulse), 
@@ -74,7 +72,8 @@ TRIAL DATA FORMAT (20 fields per trial, matching DUE struct Trial):
     onset_light    -- light onset within trial (s)
     light_duration -- light duration (s); 0 = no light
     light_freq     -- light square wave frequency (Hz); 9999 = DC HIGH (constant ON)
-    bar_select     -- shock bar: 0 = random sequence per trial, 1-8 = fixed single bar
+    bar_select     -- shock bar: 0 = random sequence per trial (experiment)
+                      1-8 = fixed single bar, 9 (sentinel value) = sequential 1->8 (calibration "All")
     onset_trig1    -- Trigger 1 onset within trial (s)
     trig1_duration -- Trigger 1 pulse duration (ms); 0 = disabled
     onset_trig2    -- Trigger 2 onset within trial (s)
@@ -84,11 +83,9 @@ REQUIREMENTS:
     pip install pyserial PyQt5
 
 USAGE:
-    python conditioning_setup_light.py
+    python conditioning_setup_dark.py
     Compatible with Spyder IDE (uses QApplication.instance() to avoid
     duplicate QApplication errors on re-run).
-    
-    
     
 AUTHOR:
     Flavio Mourao  (mourao.fg@gmail.com)
@@ -107,6 +104,7 @@ import queue
 import math
 import serial
 import serial.tools.list_ports
+import datetime
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFrame, QComboBox, QLineEdit, QTextEdit,
@@ -180,7 +178,7 @@ FIELDS = [
     "onset_light",    # LIGHT onset within trial (s)
     "light_duration", # LIGHT duration (s)
     "light_freq",     # LIGHT frequency (Hz); 9999 = DC HIGH (constant ON)
-    "bar_select",     # Shock bar selection: 0 = random sequence per trial, 1-8 = fixed single bar
+    "bar_select",     # Shock bar: 0 = random (experiment), 1-8 = fixed bar, 9 (sentinel value) = sequential 1->8 (calibration "All")
     "onset_trig1",    # Trigger 1 onset within trial (s)
     "trig1_duration", # Trigger 1 pulse duration (ms); 0 = disabled
     "onset_trig2",    # Trigger 2 onset within trial (s)
@@ -782,7 +780,7 @@ class CalibShockDialog(_CalibBase):
     """
     Shock bar calibration.
     Allows selection of a specific bar (1-8) or random sequence (all bars).
-    bar_select = All (0)  -> random sequence per trial (default behaviour).
+    bar_select = All      -> sequential 1->8 (calibration mode, sends bar_select=9 - sentinel value).
     bar_select = 1-8      -> fixed single bar; stays active for entire shock_duration.
     pulse_high and pulse_low are user-configurable (ms).
     shock_duration = 9999 s runs until ABORT.
@@ -836,7 +834,8 @@ class CalibShockDialog(_CalibBase):
         self._build_btn_row(lay)
 
     def _start(self):
-        bar_sel = float(self.cmb_bar.currentData())
+        bar_sel_raw = self.cmb_bar.currentData()
+        bar_sel = 9.0 if bar_sel_raw == 0 else float(bar_sel_raw)
         self._send_trial({
             "baseline": 0.0, "silence": 0.0,
             "onset_sound": 0.0, "sound_duration": 0.0,
@@ -877,15 +876,22 @@ class CageApp(QMainWindow):
 
         # Adaptive window size -- fits any screen resolution
         screen = QApplication.primaryScreen().availableGeometry()
-        w = min(1600, screen.width()  - 40)
-        h = min(1110,  screen.height() - 40)
+        #w = min(1600, screen.width()  - 40)
+        # h = min(1100,  screen.height() - 40)
+        w = int(screen.width()  * 0.90)
+        h = int(screen.height() * 0.95)
+        
         self.resize(w, h)
-        self.setMinimumSize(900, 600)
+        self.setMinimumSize(800, 600)
         #self.setMaximumSize(2560, 1600)
         #self.setMaximumSize(1540, 1100)
-        self.move(screen.x() + (screen.width()  - w) // 2,
-                  screen.y() + (screen.height() - h) // 4)
-
+        
+        self.move(screen.x(), screen.y())
+        
+        #self.move(screen.x() + (screen.width()  - w) // 2,
+                  #screen.y() + (screen.height() - h) // 4 - 50)
+                  #screen.y() + 1)
+        
         self.setStyleSheet(f"background:{BG}; color:{TEXT};")
 
         # Application state
@@ -998,24 +1004,30 @@ class CageApp(QMainWindow):
         if not path:
             return
         try:
-            added = 0
+            added    = 0
+            line_num = 0  # counts all data lines (excluding header and blanks)
             with open(path, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith(FIELDS[0]):
                         continue  # skip blank lines and the header row
+                    line_num += 1  # increment for every data line attempted
                     parts = [p.strip() for p in line.split(';') if p.strip()]
                     if len(parts) >= len(FIELDS):
                         try:
-                            self.trials.append(
-                                {field: float(parts[i]) for i, field in enumerate(FIELDS)}
-                            )
+                            trial = {field: float(parts[i]) for i, field in enumerate(FIELDS)}
+                            errs  = self._validate_trial(trial)
+                            if errs:
+                                self._log(f"Skipped invalid trial (line {line_num}): {errs[0]}", "warn")
+                                continue
+                            self.trials.append(trial)
                             added += 1
                         except ValueError:
-                            self._log(f"Skipped malformed line: {line[:40]}", "warn")
+                            self._log(f"Skipped malformed line (line {line_num}): {line[:40]}", "warn")
                             continue
                     else:
-                        self._log(f"Skipped short line ({len(parts)} fields): {line[:40]}", "warn")    
+                        self._log(f"Skipped short line (line {line_num}, {len(parts)} fields): {line[:40]}", "warn")
+
                             
             if added:
                 self._refresh_table()
@@ -1032,8 +1044,10 @@ class CageApp(QMainWindow):
         if not text.strip():
             QMessageBox.warning(self, "Empty Log", "Nothing to save.")
             return
+        
+        default_name = "log_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save Log", "", "Text files (*.txt);;All files (*)"
+            self, "Save Log", default_name, "Text files (*.txt);;All files (*)"
         )
         if not path:
             return
@@ -1190,7 +1204,7 @@ class CageApp(QMainWindow):
         panel = QWidget()
         lay = QVBoxLayout(panel)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(15)
+        lay.setSpacing(10)
 
         cfg_frm, cfg_lay = make_section_frame("TRIAL CONFIGURATION")
 
@@ -1308,7 +1322,7 @@ class CageApp(QMainWindow):
         self.tbl.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.tbl.verticalHeader().setVisible(False)
         self.tbl.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tbl.setFixedHeight(240)
+        self.tbl.setFixedHeight(200)
         self.tbl.clicked.connect(self._on_table_click)
         tbl_lay.addWidget(self.tbl)
         tbl_lay.addStretch()
@@ -1545,7 +1559,64 @@ class CageApp(QMainWindow):
             return float(edit.text())
         except ValueError:
             return default
-
+    
+    def _validate_trial(self, t):
+        """
+        Validate trial parameters. Returns a list of error strings.
+        An empty list means the trial is valid.
+        Checks:
+            - All time/frequency fields must be >= 0
+            - Volume must be in range 0-100
+            - Pulse HIGH and LOW must be > 0 when shock is active
+            - Pulse cycle (HIGH + LOW) must not exceed shock_duration
+        """
+        errors = []
+    
+        # --- Non-negative checks ---
+        non_neg = [
+            ("Baseline",             t["baseline"]),
+            ("Inter-Trial Interval", t["silence"]),
+            ("Sound onset",          t["onset_sound"]),
+            ("Sound duration",       t["sound_duration"]),
+            ("Carrier freq",         t["carrier_freq"]),
+            ("Modulator freq",       t["modulator_freq"]),
+            ("Shock onset",          t["onset_shock"]),
+            ("Shock duration",       t["shock_duration"]),
+            ("Pulse HIGH",           t["pulse_high"]),
+            ("Pulse LOW",            t["pulse_low"]),
+            ("Light onset",          t["onset_light"]),
+            ("Light duration",       t["light_duration"]),
+            ("Light frequency",      t["light_freq"]),
+            ("Trigger 1 onset",      t["onset_trig1"]),
+            ("Trigger 1 duration",   t["trig1_duration"]),
+            ("Trigger 2 onset",      t["onset_trig2"]),
+            ("Trigger 2 duration",   t["trig2_duration"]),
+        ]
+        for name, val in non_neg:
+            if val < 0:
+                errors.append(f"{name} cannot be negative (got {val}).")
+    
+        # --- Volume range ---
+        if not (0 <= t["volume"] <= 100):
+            errors.append(f"Volume must be between 0 and 100 (got {t['volume']}).")
+    
+        # --- Pulse consistency with shock duration ---
+        if t["shock_duration"] > 0:
+            pulse_cycle_ms = t["pulse_high"] + t["pulse_low"]
+            shock_dur_ms   = t["shock_duration"] * 1000.0
+            if t["pulse_high"] <= 0:
+                errors.append("Pulse HIGH must be > 0 when shock is active.")
+            if t["pulse_low"] <= 0:
+                errors.append("Pulse LOW must be > 0 when shock is active.")
+            if pulse_cycle_ms > 0 and pulse_cycle_ms > shock_dur_ms:
+                errors.append(
+                    f"Pulse cycle (HIGH {t['pulse_high']} ms + LOW {t['pulse_low']} ms = "
+                    f"{pulse_cycle_ms:.1f} ms) exceeds shock duration "
+                    f"({shock_dur_ms:.1f} ms). At least one full pulse cycle must fit."
+                )
+    
+        return errors
+    
     def _add_trial(self):
         """Read all input fields, append a trial dict, and refresh the UI."""
         t = {
@@ -1570,6 +1641,16 @@ class CageApp(QMainWindow):
             "onset_trig2":      self._get_float(self.e_trig2_onset),
             "trig2_duration":   self._get_float(self.e_trig2_dur),
         }
+        
+        # --- Validation ---
+        errors = self._validate_trial(t)
+        if errors:
+            QMessageBox.warning(
+                self, "Invalid Trial Parameters",
+                "The trial could not be added:\n\n" + "\n".join(f"• {e}" for e in errors)
+            )
+            return
+
         self.trials.append(t)
         self._refresh_table()
         self._update_timeline()
